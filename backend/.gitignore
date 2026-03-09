@@ -18,3 +18,6 @@ htmlcov/
 
 # Logs
 *.log
+
+#ml_models
+*.joblib
