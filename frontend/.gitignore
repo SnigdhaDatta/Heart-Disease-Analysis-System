@@ -1,0 +1,19 @@
+# Node / Vite artifacts
+node_modules/
+dist/
+.vite/
+.cache/
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+#model files
+*.joblib
+
+# Local env files
+.env
+.env.*
+!.env.example
