@@ -217,17 +217,18 @@ Contributions are welcome! 🎉 If you’d like to improve UI/UX, add validation
 1. 🍴 Fork this repository
 2. 🌿 Create a new branch:
    ```bash
-git checkout -b feature/your-feature-name
-```
+    git checkout -b feature/your-feature-name
+    ```
 3. 🛠️ Make your changes
 4. ✅ Commit with a clear message:
    ```bash
-git commit -m "Add: <short description>"
-```
+    git commit -m "Add: <short description>"
+   ```
 5. 📤 Push to your fork:
    ```bash
-git push origin feature/your-feature-name
-```
+    git push origin feature/your-feature-name
+    ```
+
 6. 🔁 Open a Pull Request (PR)
 
 ### 💡 Suggested improvements
