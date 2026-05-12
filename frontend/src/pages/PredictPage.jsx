@@ -1,7 +1,7 @@
-import React from "react";
-import { useMemo, useState } from "react";
-import { predictHeartRisk } from "../lib/api";
 
+
+import React, { useEffect, useState, useMemo } from "react";
+import { predictHeartRisk, getAutoPredict } from "../lib/api";
 const initialState = {
   Age: 55,
   Sex: 1,
@@ -23,7 +23,23 @@ export default function PredictPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+useEffect(() => {
+  const interval = setInterval(async () => {
+    try {
+      const data = await getAutoPredict();
 
+      setResult({
+        ...data.prediction,
+        sensor_data: data.sensor_data
+      });
+
+    } catch (err) {
+      console.log(err);
+    }
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, []);
   const fields = useMemo(
     () => [
       ["Age", "number"],

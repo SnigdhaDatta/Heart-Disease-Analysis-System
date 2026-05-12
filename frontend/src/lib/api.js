@@ -15,3 +15,14 @@ export async function predictHeartRisk(payload) {
 
   return data;
 }
+export async function getAutoPredict() {
+  const response = await fetch(`${API_BASE_URL}/auto-predict`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Auto prediction failed");
+  }
+
+  return data;
+}
