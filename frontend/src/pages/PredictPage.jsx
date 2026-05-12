@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useMemo } from "react";
 import { predictHeartRisk, getAutoPredict } from "../lib/api";
 const initialState = {
@@ -106,9 +104,158 @@ useEffect(() => {
     return Math.max(0, Math.min(100, Math.round(sigmoid * 100)));
   }
 
+  const sensorOnline = result?.sensor_data != null;
+  const heartRate = result?.sensor_data?.heart_rate ?? null;
+  const spo2 = result?.sensor_data?.spo2 ?? null;
+
   return (
-    <section className="grid gap-4 lg:grid-cols-3 fade-up">
-      <div className="glass-panel card-hover p-5 md:p-6 lg:col-span-2">
+    <section className="flex flex-col gap-4 fade-up">
+
+      {/* ── LIVE RESULT — top ── */}
+      <aside className="glass-panel card-hover idle-glow idle-pulse-line p-6 md:p-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+            Live Result
+          </h3>
+          <div className="flex items-center gap-1.5">
+            <span className={`h-2 w-2 rounded-full ${sensorOnline ? "animate-pulse bg-cyan-400" : "bg-slate-600"}`} />
+            <span className="text-[10px] uppercase tracking-wider text-slate-500">
+              {sensorOnline ? "Sensor Online" : "Sensor Offline"}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Row 2: Prediction + Risk Tier ── */}
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          {/* Prediction */}
+          <div className="rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400">Prediction</p>
+            {result ? (
+              <>
+                <p className={`mt-2 text-2xl font-bold ${result.prediction === "Presence" ? "text-rose-300" : "text-emerald-300"}`}>
+                  {result.prediction}
+                </p>
+                <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${predictionBadgeClass(result.prediction)}`}>
+                  {result.prediction === "Presence" ? "Heart Disease Detected" : "No Heart Disease"}
+                </span>
+              </>
+            ) : (
+              <p className="mt-2 text-3xl font-bold text-slate-600">--</p>
+            )}
+          </div>
+
+          {/* Risk Tier */}
+          <div className="rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400">Risk Tier</p>
+            {result ? (
+              <>
+                <p className={`mt-2 text-2xl font-bold ${riskBadgeClass(result.risk_level).includes("rose") ? "text-rose-300" : riskBadgeClass(result.risk_level).includes("amber") ? "text-amber-300" : "text-emerald-300"}`}>
+                  {result.risk_level}
+                </p>
+                <span className={`mt-2 inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${riskBadgeClass(result.risk_level)}`}>
+                  {result.hospitalization_required ? "Action Required" : "Monitor Only"}
+                </span>
+              </>
+            ) : (
+              <p className="mt-2 text-3xl font-bold text-slate-600">--</p>
+            )}
+          </div>
+        </div>
+
+        {/* ── Sensor Cards: HR + SpO2 ── */}
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          {/* Heart Rate */}
+          <div className={`rounded-xl border p-4 ${sensorOnline && heartRate ? "border-rose-400/30 bg-rose-500/10" : "border-slate-700 bg-slate-900/50"}`}>
+            <p className="text-[10px] uppercase tracking-wider text-slate-400">Heart Rate</p>
+            <p className={`mt-2 text-4xl font-bold tabular-nums ${sensorOnline && heartRate ? "text-rose-300" : "text-slate-600"}`}>
+              {sensorOnline && heartRate != null ? heartRate : "--"}
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">bpm</p>
+            {sensorOnline && heartRate != null && (
+              <p className={`mt-2 text-xs font-medium ${heartRate > 100 ? "text-amber-400" : heartRate < 60 ? "text-amber-400" : "text-emerald-400"}`}>
+                {heartRate > 100 ? "⚠ Tachycardia" : heartRate < 60 ? "⚠ Bradycardia" : "✓ Normal sinus rhythm"}
+              </p>
+            )}
+            {!sensorOnline && <p className="mt-2 text-xs text-slate-600">No signal</p>}
+          </div>
+
+          {/* SpO2 */}
+          <div className={`rounded-xl border p-4 ${sensorOnline && spo2 ? "border-cyan-400/30 bg-cyan-500/10" : "border-slate-700 bg-slate-900/50"}`}>
+            <p className="text-[10px] uppercase tracking-wider text-slate-400">SpO₂</p>
+            <p className={`mt-2 text-4xl font-bold tabular-nums ${sensorOnline && spo2 ? "text-cyan-300" : "text-slate-600"}`}>
+              {sensorOnline && spo2 != null ? spo2 : "--"}
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">%</p>
+            {sensorOnline && spo2 != null && (
+              <p className={`mt-2 text-xs font-medium ${spo2 < 95 ? "text-amber-400" : "text-emerald-400"}`}>
+                {spo2 < 95 ? "⚠ Below normal threshold" : "✓ Normal saturation"}
+              </p>
+            )}
+            {!sensorOnline && <p className="mt-2 text-xs text-slate-600">No signal</p>}
+          </div>
+        </div>
+
+        {!result && !loading && (
+          <p className="text-sm text-slate-500">
+            Submit the form below to see prediction, risk level, and hospitalization guidance.
+          </p>
+        )}
+        {loading && (
+          <div className="flex items-center gap-2 text-sm text-slate-300">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
+            Running model inference...
+          </div>
+        )}
+        {result && (
+          <div className="result-enter space-y-3 text-sm text-slate-200">
+            <div className="result-item result-item-2 rounded-lg border border-slate-700 bg-slate-900/70 p-3">
+              <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
+                <span>Model Confidence</span>
+                <span>{confidencePercent(result.confidence_score)}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-brand-500 transition-all duration-500"
+                  style={{ width: `${confidencePercent(result.confidence_score)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Raw score: {Number(result.confidence_score).toFixed(4)}
+              </p>
+            </div>
+
+            <div
+              className={`result-item result-item-3 rounded-lg border p-3 ${
+                result.hospitalization_required
+                  ? "border-rose-400/40 bg-rose-500/10"
+                  : "border-emerald-400/40 bg-emerald-500/10"
+              }`}
+            >
+              <p className="text-xs uppercase tracking-wide text-slate-300">
+                Hospitalization Guidance
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                { result.risk_level && result.risk_level.toLowerCase().includes("immediate") ? "Immediate hospitalization required" :
+                  result.risk_level && result.risk_level.toLowerCase().includes("high") ? "Hospitalization recommended" :
+                  result.risk_level && result.risk_level.toLowerCase().includes("moderate") ? "Monitor closely, consider hospitalization" :
+                  result.risk_level && result.risk_level.toLowerCase().includes("low") ? "No hospitalization needed, regular monitoring"
+                  : ""}
+              </p>
+              <p className="mt-1 text-xs text-slate-300">{result.hospitalization_note}</p>
+            </div>
+
+            <div className="result-item result-item-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs uppercase tracking-wide text-slate-400">Risk Level:</span>
+              <span className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${riskBadgeClass(result.risk_level)}`}>
+                {result.risk_level}
+              </span>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* ── PREDICTION WORKSPACE — below ── */}
+      <div className="glass-panel card-hover p-5 md:p-6">
         <h2 className="text-xl font-bold text-white">Prediction Workspace</h2>
         <p className="mt-1 text-sm text-slate-400">
           Enter patient profile values to generate AI-assisted triage output.
@@ -162,98 +309,6 @@ useEffect(() => {
         )}
       </div>
 
-      <aside className="glass-panel card-hover idle-glow idle-pulse-line p-5 md:p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-          Live Result
-        </h3>
-        {!result && !loading && (
-          <p className="mt-3 text-sm text-slate-400">
-            Submit the form to see prediction, risk level, and hospitalization
-            guidance.
-          </p>
-        )}
-        {loading && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-slate-300">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
-            Running model inference...
-          </div>
-        )}
-        {result && (
-          <div className="result-enter mt-4 space-y-4 rounded-xl border border-slate-700 bg-slate-900/80 p-4 text-sm text-slate-200">
-            <div className="result-item result-item-1 grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-slate-700 bg-slate-900/70 p-2.5">
-                <p className="text-[11px] uppercase tracking-wide text-slate-400">
-                  Prediction
-                </p>
-                <span
-                  className={`mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${predictionBadgeClass(result.prediction)}`}
-                >
-                  {result.prediction}
-                </span>
-              </div>
-              <div className="rounded-lg border border-slate-700 bg-slate-900/70 p-2.5">
-                <p className="text-[11px] uppercase tracking-wide text-slate-400">
-                  Risk Tier
-                </p>
-                <span
-                  className={`mt-1 inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${riskBadgeClass(result.risk_level)}`}
-                >
-                  {result.risk_level}
-                </span>
-              </div>
-            </div>
-
-            <div className="result-item result-item-2 rounded-lg border border-slate-700 bg-slate-900/70 p-3">
-              <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
-                <span>Model Confidence</span>
-                <span>{confidencePercent(result.confidence_score)}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-brand-500 transition-all duration-500"
-                  style={{
-                    width: `${confidencePercent(result.confidence_score)}%`,
-                  }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-slate-400">
-                Raw score: {Number(result.confidence_score).toFixed(4)}
-              </p>
-            </div>
-
-            <div
-              className={`result-item result-item-3 rounded-lg border p-3 ${
-                result.hospitalization_required
-                  ? "border-rose-400/40 bg-rose-500/10"
-                  : "border-emerald-400/40 bg-emerald-500/10"
-              }`}
-            >
-              <p className="text-xs uppercase tracking-wide text-slate-300">
-                Hospitalization Guidance
-              </p>
-              <p className="mt-1 text-sm font-semibold text-white">
-                {result.hospitalization_required
-                  ? "Immediate hospitalization required"
-                  : "No immediate hospitalization required"}
-              </p>
-              <p className="mt-1 text-xs text-slate-300">
-                {result.hospitalization_note}
-              </p>
-            </div>
-
-            <div className="result-item result-item-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs uppercase tracking-wide text-slate-400">
-                Risk Level:
-              </span>
-              <span
-                className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${riskBadgeClass(result.risk_level)}`}
-              >
-                {result.risk_level}
-              </span>
-            </div>
-          </div>
-        )}
-      </aside>
     </section>
   );
 }
