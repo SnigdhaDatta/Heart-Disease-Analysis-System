@@ -95,7 +95,7 @@ def auto_predict():
             "sensor_data": sensor,
             "prediction": {
                 "prediction": "Invalid Reading",
-                "risk_level": "No Finger Detected",
+                "risk_level": "Please put finger on sensor",
                 "confidence_score": 0,
                 "hospitalization_required": False,
                 "hospitalization_note": "Place finger properly on sensor"
